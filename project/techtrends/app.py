@@ -2,6 +2,7 @@ from cgitb import handler
 import sqlite3
 import logging
 import threading
+import sys
 
 from flask import Flask, jsonify, json, render_template, request, url_for, redirect, flash
 from werkzeug.exceptions import abort
@@ -89,7 +90,8 @@ def health():
             status=200,
             mimetype='application/json'
         )
-    except:
+    except Exception as e:
+        app.logger.error(e)
         return app.response_class(
             response=json.dumps({"result":"ERROR - unhealthy"}),
             status=500,
@@ -115,5 +117,14 @@ def metrics():
 
 # start the application on port 3111
 if __name__ == "__main__":
-   logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s:%(asctime)s, %(message)s', datefmt='%m/%d/%Y, %H:%M:%S')
+   # set logger to handle STDOUT and STDERR. 
+   # idea about implementing this was gotten from Udacity code review.
+   stdout_handler =  logging.StreamHandler(sys.stdout)
+   stderr_handler =  logging.StreamHandler(sys.stderr)
+   handlers = [stderr_handler, stdout_handler]
+   # format output
+   format_output = '%(levelname)s:%(name)s:%(asctime)s, %(message)s'
+
+   logging.basicConfig(level=logging.DEBUG, format=format_output, datefmt='%m/%d/%Y, %H:%M:%S', handlers=handlers)
+
    app.run(host='0.0.0.0', port='3111')
